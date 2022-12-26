@@ -2,7 +2,7 @@ function sendLineNotify() {
 
     var form = FormApp.getActiveForm();
     //สำหรับใส่ Token กลุ่มที่จะแจ้งเตือน ในกรณีนี้มี 2 กลุ่ม
-    var tokens = ['BgBUpd3c60JapsyRIvqVn0xchpshIZv0teTlHOcp4f7','VgHY2sgo65RwMC3JECwBt6DPKssC0Fj357CWoXoiOfL'];
+    var tokens = ['Your line group Tokens'];
      
     var form_res = form.getResponses()
     var formResponse = form_res[form_res.length - 1];
