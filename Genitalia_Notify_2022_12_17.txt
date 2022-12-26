@@ -1,0 +1,235 @@
+function sendLineNotify() {
+
+    var form = FormApp.getActiveForm();
+    //สำหรับใส่ Token กลุ่มที่จะแจ้งเตือน ในกรณีนี้มี 2 กลุ่ม
+    var tokens = ['BgBUpd3c60JapsyRIvqVn0xchpshIZv0teTlHOcp4f7','VgHY2sgo65RwMC3JECwBt6DPKssC0Fj357CWoXoiOfL'];
+     
+    var form_res = form.getResponses()
+    var formResponse = form_res[form_res.length - 1];
+    var itemResponses = formResponse.getItemResponses();
+
+    var items = form.getItems();
+    var all_message = '\n';
+    var all_message_resend = '';
+    var all_message_send = '';
+    var image_id = [];
+    var IMAGE_URL = [];
+    var imgThumbnail = [];
+    var imgFullsize =  [];
+    var file_upload_num = 0;
+
+
+    //------get previous noti of the day----------//
+    const previousNotiArray = get_previous_noti(form);
+    var previousNotiMsg = previousNotiArray[0];
+    var countReportTimes = previousNotiArray[1];
+
+    //------END previous npti of the day----------//
+
+    var pig_remark = '';
+    for(var i = 0; i < items.length; i++){
+      if(items[i].getTitle() == "การทำตำหนิ"){
+        pig_remark = items[i].getHelpText();
+        console.log('pig_remark : ', pig_remark);
+      }
+    }
+
+    for (var i = 0; i < itemResponses.length; i++){
+      if (items[i].getType() == "GRID") 
+      {
+        var mrow = items[i].asGridItem().getRows();
+        var mcol = items[i].asGridItem().getColumns();
+        var itemResponse_val = itemResponses[i].getResponse().toString().split(",")
+  
+        all_message += itemResponses[i].getItem().getTitle() + ' : ' + '\n';
+         
+        for (var j = 0; j < mrow.length; j++)
+        {
+          all_message += '   - ' + mrow[j] + ' : ' + itemResponse_val[j] + '\n';
+        }
+        console.log('all_message at Grid: ', all_message);
+      }
+      else if (items[i].getType() == "FILE_UPLOAD")
+      {
+        for(file_upload_num; file_upload_num < 1; file_upload_num++)
+        {
+          image_id[0] = itemResponses[i].getResponse();
+          console.log('image_id: ',image_id);
+          var image_id_array = image_id[0];
+          console.log('image_id_array', image_id_array);
+          console.log('image_id_array.length', image_id_array.length);
+
+          var url_default = 'http://drive.google.com/uc?export=view&id='
+          all_message +=  itemResponses[i].getItem().getTitle() + ' : '+'\n';
+          console.log('all_message: ', all_message);
+
+          for(var j = 0 ; j < image_id_array.length; j++)
+          {
+            IMAGE_URL[j] = url_default + image_id_array[j];
+            imgThumbnail[j] = IMAGE_URL[j];
+            imgFullsize[j] = IMAGE_URL[j];
+            all_message += '\n'+ IMAGE_URL[j];
+            console.log('---inside image id array all_message---: ', all_message);
+            file_upload_num += 1;
+          } 
+        }    
+      }
+      else
+      {
+        all_message += itemResponses[i].getItem().getTitle() + ' : ' + itemResponses[i].getResponse() + '\n';
+        console.log('all_message at else: ', all_message);
+      }
+    }
+    console.log('out of if statement');
+    console.log('all_message: ', all_message);
+    console.log('pig_remark : ', pig_remark);
+    all_message += '\n'+ pig_remark
+
+    all_message_send = previousNotiMsg+ '\n' +'***รายงานที่*** : '+ (countReportTimes+1) + '\n'+ all_message;
+    console.log('all_message_send : ', all_message_send);
+  
+    var formData ='';
+    if ( file_upload_num > 0 ) 
+    {
+      for (var m = 0; m < file_upload_num; m++ )
+      {
+        if ( m == 0 )
+        {
+          all_message_send = all_message_send;
+        }
+        else if ( m > 0 ) 
+        {
+          all_message_resend = 'Picture: ' + (m);
+          all_message_send = all_message_resend;
+        }
+        formData = {
+          'message' : all_message_send,
+          'imageThumbnail': imgThumbnail[m],'imageFullsize' : imgFullsize[m],   
+        }
+        
+        fetch_data(formData, tokens);
+      }
+    }
+    else 
+    {
+        formData = {
+        'message' : all_message_send,  
+      }
+      fetch_data(formData, tokens);
+    }
+
+    }
+
+    // function delete_Response(){
+    //   var today = new Date();
+    //   console.log('today : ', today);
+    //   var daysTimeLimit = 7;
+    //   var form = FormApp.getActiveForm();
+    //   var formResponses = form.getResponses();
+    //   console.log('formResponses.length : ', formResponses.length);
+    //   var itemIdTodelete_array = [];
+
+    //   for (var i = 0; i< formResponses.length; i++){
+    //     var formResponse = formResponses[i];
+    //     var timeStampResponse = formResponse.getTimestamp();
+    //     console.log('timeStampResponses : ', timeStampResponse);
+    //     var itemDateTime = timeStampResponse;
+    //     var itemDate = Date.UTC(itemDateTime.getFullYear(), itemDateTime.getMonth(), itemDateTime.getDay());
+    //     console.log('itemDate : ', itemDate);
+    //     var utc1 = Date.UTC(today.getFullYear(),today.getMonth(),today.getDay());
+    //     var diffTime = Math.abs(itemDate - utc1);
+    //     console.log('diffTime',diffTime);
+    //     var daysDiff = Math.floor(diffTime/(1000*60*60*24));
+    //     console.log('this item is ', +daysDiff+' Days Old');
+
+    //     if( daysDiff > daysTimeLimit){
+    //       itemIdTodelete_array.push(formResponse.getId());
+    //       // Delete response
+    //       //form.deleteResponse(formResponse.getId());
+    //       // delete spreadsheet
+    //     }
+    //   }
+    // }
+
+    function get_previous_noti(form){
+      //---mocking code---//
+      if(form == null){
+        form = FormApp.getActiveForm();
+      }
+      
+      var form_res = form.getResponses()
+      var all_message = '\n';
+      const MILLIS_PER_DAY = 1000 * 60 * 60 * 24;
+
+
+      console.log('test form_res.length ',form_res.length);
+
+      //var specDate = new Date('2022-12-17');
+      var specDate = new Date();
+      var specDateUtc = Date.UTC(specDate.getFullYear(),specDate.getMonth(),specDate.getDay());
+
+      var countReportTimes = 0;
+      var filterOutLastestMsgArray = [];
+      //สร้าง Array เพื่อเก็บ Text Msg เป็น set แล้วตัดตัวสุดท้ายออก เพราะเป็นข้อมูลล่าสุด
+      
+      for(var a = 0; a < form_res.length; a++){
+        var itemTimeStamped = new Date(form_res[a].getTimestamp());
+        var itemTimeStampedUtc = Date.UTC(itemTimeStamped.getFullYear(),itemTimeStamped.getMonth(),itemTimeStamped.getDay());
+        
+
+        if(itemTimeStampedUtc == specDateUtc){
+          console.log('this item time stamped : ', form_res[a].getTimestamp);
+          var formId = form_res[a].getId();
+          var item = form_res[a].getItemResponses();
+          
+          var toFilterOutMsg = '';
+
+          for(var b = 0; b < (item.length); b++){
+            // latest report is in the last array index we donot want it to be on previous noti
+            var reportTime = '\n'+'***รายงานที่*** : ' + (countReportTimes+1);
+            var itemQues = item[b].getItem().getTitle();
+            var itemRes = item[b].getResponse();
+            if(b==0){
+              toFilterOutMsg += reportTime + '\n' + itemQues + ' : ' + itemRes + '\n';
+            }else{
+              toFilterOutMsg += itemQues + ' : ' + itemRes + '\n';
+              var indexNumber = (b+1)/item.length;
+              console.log('indexNumber : ', indexNumber);
+            }
+
+            if((b+1)/item.length == 1){
+              countReportTimes += 1;
+              filterOutLastestMsgArray.push(toFilterOutMsg);
+              toFilterOutMsg = '';
+              console.log('countReportTimes : ', countReportTimes);
+            }
+          }
+        }
+      }
+
+      filterOutLastestMsgArray.pop();
+      // pop out last element becuase it the lastest report that user filled in
+
+      console.log('after poped : ');
+      for(var c=0; c < filterOutLastestMsgArray.length; c++){
+        console.log('filterOutLastestMsgArray[c]: ',filterOutLastestMsgArray[c]);
+        all_message += filterOutLastestMsgArray[c];
+      }
+
+      console.log('last all_message : ', all_message);
+      countReportTimes = filterOutLastestMsgArray.length;
+
+      var returnPreviousNotiArray = [all_message, countReportTimes];
+      return returnPreviousNotiArray;
+    }
+
+    function fetch_data(formData, tokens){
+      for(var k = 0; k < tokens.length; k++){
+        var preparedOptions = {
+            "method" : "post",
+            "payload" : formData,
+            "headers" : {"Authorization" : "Bearer " + tokens[k]}
+          };
+        UrlFetchApp.fetch("https://notify-api.line.me/api/notify", preparedOptions);
+      }
+    }
